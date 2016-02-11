@@ -1,6 +1,10 @@
 TUN/TAP
 =======
 
+[![GoDoc](https://godoc.org/github.com/jamescun/tuntap?status.svg)](https://godoc.org/github.com/jamescun/tuntap) [![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
+
+**NOTE:** This package is new and should be considered unstable, in terms of both API and function.
+
 tuntap is a native wrapper for interfacing with TUN/TAP network devices in an idiomatic fashion.
 
 Currently supported are Linux and Mac OS X.
