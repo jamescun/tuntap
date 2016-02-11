@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"syscall"
 	"time"
 
 	"github.com/jamescun/tuntap"
@@ -15,7 +14,7 @@ func main() {
 		return
 	}
 
-	tun, err := tuntap.Open(tuntap.TUN, os.Args[1])
+	tun, err := tuntap.Tun(os.Args[1])
 	if err != nil {
 		fmt.Println("error: tun:", err)
 		return
@@ -25,23 +24,13 @@ func main() {
 	buf := make([]byte, 1500)
 	for {
 		n, err := tun.Read(buf)
-		if perr, ok := err.(*os.PathError); ok {
-			if code, ok := perr.Err.(syscall.Errno); ok {
-				if code == 0x5 {
-					// interface is not ready (no address assigned)
-					fmt.Println("warning: tun: interface not ready, waiting 1s...")
-
-					time.Sleep(1 * time.Second)
-					continue
-				}
-			}
-
-			fmt.Println("error: read:", err)
-			return
+		if err == tuntap.ErrNotReady {
+			fmt.Println("warning: tun: interface not ready, waiting 1s...")
+			time.Sleep(1 * time.Second)
+			continue
 		} else if err != nil {
-			fmt.Printf("error: read: %#v\n", err)
 			fmt.Println("error: read:", err)
-			return
+			break
 		}
 
 		fmt.Printf("received: %d [%x]\n", n, buf[:n])

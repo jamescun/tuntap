@@ -5,13 +5,10 @@ import (
 )
 
 var (
+	ErrBusy        = errors.New("device is already in use")
+	ErrNotReady    = errors.New("device is not ready")
+	ErrExhausted   = errors.New("no devices are available")
 	ErrUnsupported = errors.New("device is unsupported on this platform")
-)
-
-// device identifiers
-const (
-	TUN = 0x0001
-	TAP = 0x0002
 )
 
 // Interface represents a TUN/TAP network interface
@@ -32,15 +29,18 @@ type Interface interface {
 	String() string
 }
 
-// return TUN/TAP interface ready for use
-func Open(dev uint16, name string) (Interface, error) {
-	switch dev {
-	case TUN:
-		return newTUN(name)
+// return a TUN interface. depending on platform, the device may not be ready
+// for use yet; a caller must poll the Ready() method before use. additionally
+// the caller is responsible for calling Close() to terminate the device.
+func Tun(name string) (Interface, error) {
+	// call platform specific device creation
+	return newTUN(name)
+}
 
-	case TAP:
-		return newTAP(name)
-	}
-
-	return nil, ErrUnsupported
+// return a TAP interface. depending on platform, the device may not be ready
+// for use yet; a caller must poll the Ready() method before use. additionally
+// the caller is responsible for calling Close() to terminate the device.
+func Tap(name string) (Interface, error) {
+	// call platform specific device creation
+	return newTAP(name)
 }

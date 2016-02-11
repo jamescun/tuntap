@@ -19,17 +19,21 @@ The configuration required to open a TUN/TAP device varies by platform. The diff
 
 ### Linux
 
-When creating a TUN/TAP device, Linux expects to be given a name for the new interface, and a new interface will be allocated for it by the kernel module.
+When creating a TUN/TAP device, Linux expects to be given a name for the new interface, and a new interface will be allocated for it by the kernel module. If left blank, one will be generated `(tun|tap)([0-9]+)`.
 
-    tap, err := Open(tuntap.TAP, "tap0")
-    tun, err := Open(tuntap.TUN, "foo1")
+    tap, err := tuntap.Tap("tap1") // created tap1 device if available
+    tun, err := tuntap.Tun("")     // created tun device at first available id (tun0)
 
 
 ### Mac OS X
 
-On startup, the Mac OS X TUN/TAP kernel extension will allocate multiple TUN/TAP devices, up to the maximum number of each. When creating a TUN/TAP device, Mac OS X expects to be given a path to an unused device.
+On startup, the Mac OS X TUN/TAP kernel extension will allocate multiple TUN/TAP devices, up to the maximum number of each. When creating a TUN/TAP device, Mac OS X expects to be given a path to an unused device. If left blank, this package will attempt to find the first unused one.
 
-Currently this package will not attempt to find an unused device, however this is planned to be implemented.
+    tap, err := tuntap.Tap("/dev/tap1") // open tap1 device if unused
+    tun, err := tuntap.Tun("")          // open first available tun device (tun0)
 
-    tap, err := Open(tuntap.TAP, "/dev/tap0")
-	tun, err := Open(tuntap.TUN, "/dev/tun15")
+
+Examples
+--------
+
+See the [examples](examples) directory.

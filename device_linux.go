@@ -9,7 +9,22 @@ import (
 	"unsafe"
 )
 
-const cIFF_NO_PI = 0x1000
+const (
+	cIFF_TUN   = 0x0001
+	cIFF_TAP   = 0x0002
+	cIFF_NO_PI = 0x1000
+)
+
+type device struct {
+	n string
+	f *os.File
+}
+
+func (d *device) Name() string                { return d.n }
+func (d *device) String() string              { return d.n }
+func (d *device) Close() error                { return d.f.Close() }
+func (d *device) Read(p []byte) (int, error)  { return d.f.Read(p) }
+func (d *device) Write(p []byte) (int, error) { return d.f.Write(p) }
 
 func newTUN(name string) (Interface, error) {
 	file, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
@@ -17,12 +32,12 @@ func newTUN(name string) (Interface, error) {
 		return nil, err
 	}
 
-	ifName, err := createInterface(file.Fd(), name, TUN|cIFF_NO_PI)
+	iface, err := createTuntapInterface(file.Fd(), name, cIFF_TUN|cIFF_NO_PI)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Device{r: file, n: ifName}, nil
+	return &device{n: iface, f: file}, nil
 }
 
 func newTAP(name string) (Interface, error) {
@@ -31,29 +46,29 @@ func newTAP(name string) (Interface, error) {
 		return nil, err
 	}
 
-	ifName, err := createInterface(file.Fd(), name, TAP|cIFF_NO_PI)
+	iface, err := createTuntapInterface(file.Fd(), name, cIFF_TAP|cIFF_NO_PI)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Device{r: file, n: ifName}, nil
+	return &device{n: iface, f: file}, nil
 }
 
-type ifReq struct {
+type tuntapInterface struct {
 	Name  [0x10]byte
 	Flags uint16
 	pad   [0x28 - 0x10 - 2]byte
 }
 
-func createInterface(fd uintptr, ifName string, flags uint16) (createdIFName string, err error) {
-	var req ifReq
+func createTuntapInterface(fd uintptr, name string, flags uint16) (string, error) {
+	var req tuntapInterface
 	req.Flags = flags
-	copy(req.Name[:], ifName)
+	copy(req.Name[:], name)
+
 	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, fd, uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&req)))
 	if errno != 0 {
-		err = errno
-		return
+		return "", errno
 	}
-	createdIFName = strings.Trim(string(req.Name[:]), "\x00")
-	return
+
+	return strings.Trim(string(req.Name[:]), "\x00"), nil
 }
