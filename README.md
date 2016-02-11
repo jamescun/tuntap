@@ -32,6 +32,8 @@ On startup, the Mac OS X TUN/TAP kernel extension will allocate multiple TUN/TAP
     tap, err := tuntap.Tap("/dev/tap1") // open tap1 device if unused
     tun, err := tuntap.Tun("")          // open first available tun device (tun0)
 
+Additionally, unlike Linux, a TUN/TAP device is not "ready" on OS X until it has an address assigned to it. Any attempt to read from/write to the interface will fail with ErrBusy. It is safe to backoff and try again until a successful operation.
+
 
 Examples
 --------
